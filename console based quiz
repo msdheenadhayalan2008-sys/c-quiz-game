@@ -1,0 +1,130 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <ctype.h>
+#include <time.h>
+
+struct Question {
+    char q[120];
+    char opt[4][40];
+    char ans; /* 'A' to 'D' */
+};
+
+struct Question cprog[5] = {
+    {"Who developed the C language?", {"James Gosling", "Dennis Ritchie", "Bjarne Stroustrup", "Guido van Rossum"}, 'B'},
+    {"Which symbol ends a C statement?", {".", ":", ";", ","}, 'C'},
+    {"Which header file is needed for printf()?", {"stdlib.h", "stdio.h", "string.h", "math.h"}, 'B'},
+    {"Size of int in most systems (bytes)?", {"1", "2", "4", "8"}, 'C'},
+    {"Which loop runs at least once?", {"for", "while", "do-while", "none"}, 'C'}
+};
+
+struct Question gk[5] = {
+    {"Capital of Tamil Nadu?", {"Madurai", "Chennai", "Coimbatore", "Salem"}, 'B'},
+    {"National animal of India?", {"Lion", "Elephant", "Tiger", "Leopard"}, 'C'},
+    {"Father of the Nation?", {"Nehru", "Gandhi", "Bose", "Patel"}, 'B'},
+    {"How many states are in India?", {"28", "29", "30", "27"}, 'A'},
+    {"Longest river in India?", {"Yamuna", "Godavari", "Ganga", "Kaveri"}, 'C'}
+};
+
+struct Question tech[10] = {
+    {"Full form of CPU?", {"Central Process Unit", "Central Processing Unit", "Control Processing Unit", "Central Program Unit"}, 'B'},
+    {"Which one is an operating system?", {"Oracle", "Linux", "Python", "HTML"}, 'B'},
+    {"HTML stands for?", {"Hyper Text Markup Language", "High Text Machine Language", "Hyper Tool Markup Language", "Home Text Markup Language"}, 'A'},
+    {"Which one is NOT a programming language?", {"Python", "Java", "HTML", "C++"}, 'C'},
+    {"1 byte = ? bits", {"4", "8", "16", "32"}, 'B'},
+    {"Which one is an input device?", {"Monitor", "Printer", "Keyboard", "Speaker"}, 'C'},
+    {"Software used for 2D drafting in civil design?", {"Tally", "AutoCAD", "Photoshop", "Excel"}, 'B'},
+    {"GPS stands for?", {"General Position System", "Global Path System", "Geo Point Signal", "Global Positioning System"}, 'D'},
+    {"Most widely used binding material in construction?", {"Sand", "Steel", "Cement", "Brick"}, 'C'},
+    {"SI unit of electric current?", {"Volt", "Ampere", "Ohm", "Watt"}, 'B'}
+};
+
+int getHighScore(void) {
+    int hs = 0;
+    FILE *f = fopen("highscore.txt", "r");
+    if (f) { fscanf(f, "%d", &hs); fclose(f); }
+    return hs;
+}
+
+void saveHighScore(int score) {
+    if (score > getHighScore()) {
+        FILE *f = fopen("highscore.txt", "w");
+        if (f) { fprintf(f, "%d", score); fclose(f); }
+        printf("New High Score!\n");
+    }
+}
+
+int playQuiz(struct Question *qs, int n) {
+    int score = 0, lifeline = 1, i, j;
+    char a;
+    for (i = 0; i < n; i++) {
+        printf("\nQ%d. %s\n", i + 1, qs[i].q);
+        for (j = 0; j < 4; j++)
+            printf("  %c) %s\n", 'A' + j, qs[i].opt[j]);
+        if (lifeline) printf("  H) Use 50-50 lifeline\n");
+        printf("Your answer: ");
+        scanf(" %c", &a);
+        a = toupper(a);
+
+        if (a == 'H' && lifeline) {
+            int c = qs[i].ans - 'A';
+            int w = (c + 1 + rand() % 3) % 4; /* one wrong option */
+            int lo = c < w ? c : w, hi = c < w ? w : c;
+            lifeline = 0;
+            printf("  %c) %s\n  %c) %s\n", 'A' + lo, qs[i].opt[lo], 'A' + hi, qs[i].opt[hi]);
+            printf("Your answer: ");
+            scanf(" %c", &a);
+            a = toupper(a);
+        }
+
+        if (a == qs[i].ans) {
+            printf("Correct!\n");
+            score++;
+        } else {
+            printf("Wrong! Correct answer: %c\n", qs[i].ans);
+        }
+    }
+    return score;
+}
+
+void showResult(int score, int total) {
+    printf("\n===== RESULT =====\n");
+    printf("Correct: %d | Wrong: %d | Score: %d/%d\n", score, total - score, score, total);
+    if (score == total) printf("Excellent!\n");
+    else if (score * 100 / total >= 60) printf("Good job!\n");
+    else printf("Keep practicing!\n");
+}
+
+int main(void) {
+    int choice, cat, score, total;
+    srand(time(0));
+    do {
+        printf("\n===== QUIZ GAME =====\n");
+        printf("1. Start Quiz\n2. Instructions\n3. High Score\n4. Exit\n");
+        printf("Enter choice: ");
+        scanf("%d", &choice);
+        switch (choice) {
+            case 1:
+                printf("\nChoose category:\n1. C Programming\n2. General Knowledge\n3. Technical Quiz\nEnter: ");
+                scanf("%d", &cat);
+                if (cat == 1) { total = 5; score = playQuiz(cprog, total); }
+                else if (cat == 3) { total = 10; score = playQuiz(tech, total); }
+                else { total = 5; score = playQuiz(gk, total); }
+                showResult(score, total);
+                saveHighScore(score * 100 / total); /* stored as percentage */
+                break;
+            case 2:
+                printf("\nAnswer with A/B/C/D. Type H once to use the 50-50 lifeline.\n");
+                printf("Each correct answer = 1 point.\n");
+                break;
+            case 3:
+                printf("\nHigh Score: %d%%\n", getHighScore());
+                break;
+            case 4:
+                printf("Thank you for playing!\n");
+                break;
+            default:
+                printf("Invalid choice!\n");
+        }
+    } while (choice != 4);
+    return 0;
+}
